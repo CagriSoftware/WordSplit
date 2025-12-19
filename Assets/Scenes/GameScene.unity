@@ -1253,7 +1253,6 @@ MonoBehaviour:
   scoreText: {fileID: 405850990}
   letterGenerator: {fileID: 1349663059}
   timerController: {fileID: 1107454809}
-  wordListFile: {fileID: 4900000, guid: ae94f6856d4920e46b134b33cacba5c5, type: 3}
   feedbackAnimator: {fileID: 2005916434}
   letterPanelContainer: {fileID: 2012234412}
   animationDuration: 1.2
@@ -1451,6 +1450,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuManager
   questPanel: {fileID: 0}
+  modeSelectionPanel: {fileID: 0}
 --- !u!4 &1068452484
 Transform:
   m_ObjectHideFlags: 0
@@ -1618,6 +1618,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuManager
   questPanel: {fileID: 0}
+  modeSelectionPanel: {fileID: 0}
 --- !u!1 &1349663058
 GameObject:
   m_ObjectHideFlags: 0
@@ -1708,14 +1709,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CityChecker
   playerInput: {fileID: 1850470993}
-  randomLettersText: {fileID: 1849334716}
-  scoreText: {fileID: 405850990}
   letterGenerator: {fileID: 1349663059}
+  scoreText: {fileID: 405850990}
   timerController: {fileID: 1107454809}
-  cityListFile: {fileID: 4900000, guid: 5d038ceb513a1584d9b5863cc94f28a1, type: 3}
   feedbackAnimator: {fileID: 2005916434}
   letterPanelContainer: {fileID: 2012234412}
-  animationDuration: 1.2
 --- !u!4 &1361418033
 Transform:
   m_ObjectHideFlags: 0
@@ -1880,7 +1878,7 @@ GameObject:
   - component: {fileID: 1669379366}
   - component: {fileID: 1669379365}
   m_Layer: 5
-  m_Name: Image
+  m_Name: SubmitButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1949,21 +1947,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 724222124}
-        m_TargetAssemblyTypeName: WordChecker, Assembly-CSharp
-        m_MethodName: CheckWord
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 1361418032}
-        m_TargetAssemblyTypeName: CityChecker, Assembly-CSharp
-        m_MethodName: CheckCity
+      - m_Target: {fileID: 1349663061}
+        m_TargetAssemblyTypeName: GameModeManager, Assembly-CSharp
+        m_MethodName: SubmitInput
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2484,10 +2470,10 @@ RectTransform:
   - {fileID: 144101390}
   m_Father: {fileID: 2052198054}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.1858502, y: 0.06864564}
-  m_AnchorMax: {x: 0.83564174, y: 0.44400004}
-  m_AnchoredPosition: {x: -10.65, y: 267.97}
-  m_SizeDelta: {x: -134.78189, y: -535.9496}
+  m_AnchorMin: {x: 0.24044444, y: 0.34937462}
+  m_AnchorMax: {x: 0.7617037, y: 0.44400004}
+  m_AnchoredPosition: {x: -0.14996338, y: -1.5299683}
+  m_SizeDelta: {x: 4.218109, y: 3.050415}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1850470993
 MonoBehaviour:

@@ -1,159 +1,108 @@
-// CityChecker.cs
-
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization.Settings;
+using System.Globalization;
 
 public class CityChecker : MonoBehaviour
 {
-    [Header("UI & Controllers")]
-    [SerializeField] private TMP_InputField playerInput; 
-    [SerializeField] private TMP_Text randomLettersText; 
-    [SerializeField] private TMP_Text scoreText;
+    [SerializeField] private TMP_InputField playerInput;
     [SerializeField] private LetterGenerator letterGenerator;
+    [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TimerController timerController;
-    [SerializeField] private TextAsset cityListFile; 
-
-    [Header("Feedback Settings")]
     [SerializeField] private Animator feedbackAnimator;
     [SerializeField] private GameObject letterPanelContainer;
-    [SerializeField] private float animationDuration = 1.2f;
 
-    // Şehir modu için eklenenler
     private HashSet<string> validCities;
-    private HashSet<string> usedCities;
+    private HashSet<string> usedCities = new HashSet<string>();
     private int score = 0;
+    private CultureInfo trCulture = new CultureInfo("tr-TR");
 
-    private void Awake()
-    {
-        LoadCityList();
-        usedCities = new HashSet<string>();
-        UpdateScoreDisplay();
+    IEnumerator Start() 
+    { 
+        // Localization hazır olana kadar bekle
+        yield return LocalizationSettings.InitializationOperation;
+        RefreshCityList(); 
     }
 
-    private void LoadCityList()
+    public void RefreshCityList()
     {
         validCities = new HashSet<string>();
-        if (cityListFile != null)
+        if (LocalizationSettings.SelectedLocale == null) return;
+
+        string dil = LocalizationSettings.SelectedLocale.Identifier.Code;
+        string dosya = dil.Contains("tr") ? "worldcities" : "worldcities_en";
+        
+        TextAsset asset = Resources.Load<TextAsset>(dosya);
+        if (asset != null)
         {
-            string[] cities = cityListFile.text.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries);
-            foreach (var city in cities)
-            {
-                validCities.Add(city.Trim().ToUpper());
-            }
+            CultureInfo culture = dil.Contains("tr") ? trCulture : CultureInfo.InvariantCulture;
+            string[] lines = asset.text.Split(new[] { '\n', '\r' }, System.StringSplitOptions.RemoveEmptyEntries);
+            foreach (var c in lines) validCities.Add(c.Trim().ToUpper(culture));
+        }
+        else
+        {
+            Debug.LogError($"Resources klasöründe '{dosya}' dosyası bulunamadı!");
         }
     }
 
-    public void HandleTimeOut()
+    public void CheckCity()
     {
-
-        if (PlayerPrefs.GetInt(GameConstants.GAME_MODE_KEY, GameConstants.MODE_WORD) != GameConstants.MODE_CITY) return;
-        
-        score -= 10;
-        UpdateScoreAndCheckQuests();
-        StartCoroutine(AnimateAndStartNewTour(false));
-    }
-
-    public void CheckCity() 
-    {
-
-        if (PlayerPrefs.GetInt(GameConstants.GAME_MODE_KEY, GameConstants.MODE_WORD) != GameConstants.MODE_CITY) return;
-        
-        string city = playerInput.text.ToUpper().Trim();
-        string letters = letterGenerator.GetLastGeneratedLetters().ToUpper();
-        
-        if (city.Length == 0) return;
-
-        bool isCityValid = false;
-        
-        // 1. Kontrol: Şehir geçerli listede var mı?
-        if (!validCities.Contains(city))
+        // GÜVENLİK KONTROLÜ: NullReferenceException'ı önlemek için
+        if (validCities == null || letterGenerator == null || feedbackAnimator == null)
         {
-             score -= 10;
-        }
-        // 2. Kontrol: Şehir daha önce kullanıldı mı?
-        else if (usedCities.Contains(city))
-        {
-
-            StartCoroutine(AnimateAndStartNewTour(false));
+            Debug.LogError("CityChecker: Gerekli referanslar eksik! Inspector'ı kontrol edin.");
             return;
         }
-        else if (!CityContainLetters(city, letters))
-        {
-            score -= 10;
-        }
-        // Başarılı
-        else 
-        {
-            score += 15;
-            usedCities.Add(city);
-            isCityValid = true;
-        }
-        
-        UpdateScoreAndCheckQuests();
-        StartCoroutine(AnimateAndStartNewTour(isCityValid));
-    }
 
-    private void UpdateScoreDisplay()
-    {
-        scoreText.text = "" + score;
-    }
-    
-    private void UpdateScoreAndCheckQuests()
-    {
-        UpdateScoreDisplay(); 
-        
-        int currentHighScore = PlayerPrefs.GetInt(GameConstants.HIGH_SCORE_KEY, 0);
-        if (score > currentHighScore)
+        string dil = LocalizationSettings.SelectedLocale.Identifier.Code;
+        CultureInfo culture = dil.Contains("tr") ? trCulture : CultureInfo.InvariantCulture;
+
+        string input = playerInput.text.Trim().ToUpper(culture);
+        string generatedLetters = letterGenerator.GetLastGeneratedLetters();
+
+        if (string.IsNullOrEmpty(generatedLetters)) 
         {
-            PlayerPrefs.SetInt(GameConstants.HIGH_SCORE_KEY, score);
+            Debug.LogWarning("Henüz harf üretilmedi.");
+            return;
         }
 
-        if (score >= GameConstants.QUEST_SCORE_THRESHOLD && PlayerPrefs.GetInt(GameConstants.QUEST_COMPLETED_KEY, 0) == 0)
-        {
-            PlayerPrefs.SetInt(GameConstants.QUEST_COMPLETED_KEY, 1); 
-            PlayerPrefs.Save(); 
-        }
+        string letters = generatedLetters.ToUpper(culture);
+
+        bool success = validCities.Contains(input) && !usedCities.Contains(input) && CityContainLetters(input, letters);
+        
+        if (success) { score += 15; usedCities.Add(input); }
+        else { score -= 10; }
+
+        if (scoreText != null) scoreText.text = score.ToString();
+        StartCoroutine(AnimateResult(success));
     }
 
     private bool CityContainLetters(string city, string letters)
     {
-        foreach (char letter in letters)
-        {
-            if (city.IndexOf(letter) == -1)
-            {
-                return false;
-            }
-        }
-        return true; 
+        foreach (char l in letters) if (!city.Contains(l.ToString())) return false;
+        return true;
     }
 
-    private IEnumerator AnimateAndStartNewTour(bool isCorrect)
+    private IEnumerator AnimateResult(bool ok)
     {
-        letterPanelContainer.SetActive(false);
-        playerInput.text = ""; 
-
-        if (isCorrect)
-        {
-            feedbackAnimator.SetTrigger("Correct");
-        }
-        else
-        {
-            feedbackAnimator.SetTrigger("Incorrect");
-        }
-        yield return new WaitForSeconds(animationDuration); 
-
-        NewTour();
-    }
-
-    private void NewTour()
-    {
-        if (PlayerPrefs.GetInt(GameConstants.GAME_MODE_KEY, GameConstants.MODE_WORD) != GameConstants.MODE_CITY) return;
+        if (letterPanelContainer != null) letterPanelContainer.SetActive(false);
+        playerInput.text = "";
         
-        letterPanelContainer.SetActive(true); 
-        letterGenerator.GenerateRandomLetters();
-        timerController.StartNewTour();
-        playerInput.Select();
+        if (feedbackAnimator != null) feedbackAnimator.SetTrigger(ok ? "Correct" : "Incorrect");
+        
+        yield return new WaitForSeconds(1.2f);
+        
+        if (letterPanelContainer != null) letterPanelContainer.SetActive(true);
+        if (letterGenerator != null) letterGenerator.GenerateRandomLetters();
+        if (timerController != null) timerController.StartNewTour();
+    }
+
+    public void HandleTimeOut() 
+    { 
+        score -= 10; 
+        if (scoreText != null) scoreText.text = score.ToString(); 
+        StartCoroutine(AnimateResult(false)); 
     }
 }
