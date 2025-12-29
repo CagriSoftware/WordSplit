@@ -8,51 +8,64 @@ public class MainMenuManager : MonoBehaviour
     [Header("Panel References")]
     [SerializeField] private GameObject questPanel; 
     [SerializeField] private GameObject modeSelectionPanel;
+    [SerializeField] private GameObject mainCanvasRoot;
 
     private IEnumerator Start()
-{
-    // 1. Önce Localization sisteminin uyanmasını bekle
-    yield return LocalizationSettings.InitializationOperation;
+    {
+        yield return LocalizationSettings.InitializationOperation;
 
-    // 2. Sistem uyandıktan sonra seçili dili zorla uygula 
-    // (Bazen sistem varsayılan dili hemen objelere basamaz)
-    var currentLocale = LocalizationSettings.SelectedLocale;
-    LocalizationSettings.SelectedLocale = currentLocale;
+        var currentLocale = LocalizationSettings.SelectedLocale;
+        LocalizationSettings.SelectedLocale = currentLocale;
 
-    // 3. Bir frame daha bekle ki objeler dili kavrasın
-    yield return null;
+        yield return null;
 
-    // 4. Şimdi panelleri kapatabilirsin
-    if (modeSelectionPanel != null) modeSelectionPanel.SetActive(false);
-    if (questPanel != null) questPanel.SetActive(false);
-}
+        if (modeSelectionPanel != null) modeSelectionPanel.SetActive(false);
+        if (questPanel != null) questPanel.SetActive(false);
+    }
 
-    // --- Dil Değiştirme Sistemi ---
     public void ChangeLanguage(int localeID)
     {
-        // Eğer zaten bir dil değişimi süreci varsa durdur ve yenisini başlat
         StopAllCoroutines();
         StartCoroutine(SetLocale(localeID));
     }
 
-    private IEnumerator SetLocale(int _localeID)
+   private IEnumerator SetLocale(int _localeID)
+{
+    yield return LocalizationSettings.InitializationOperation;
+    
+    var targetLocale = LocalizationSettings.AvailableLocales.Locales[_localeID];
+    LocalizationSettings.SelectedLocale = targetLocale;
+
+    while (!LocalizationSettings.SelectedLocale.Identifier.Equals(targetLocale.Identifier))
     {
-        yield return LocalizationSettings.InitializationOperation;
-        
-        if (_localeID < LocalizationSettings.AvailableLocales.Locales.Count)
-        {
-            // Yeni dili uygula
-            LocalizationSettings.SelectedLocale = LocalizationSettings.AvailableLocales.Locales[_localeID];
-
-            // Asset Table'lar bazen asenkron yüklendiği için 
-            // değişikliğin tüm objelere yayılmasını beklemek iyi bir pratiktir.
-            yield return null; 
-
-            Debug.Log("Dil Değiştirildi: " + LocalizationSettings.SelectedLocale.Identifier.Code);
-        }
+        yield return null;
     }
 
-    // --- Panel Yönetimi ---
+    yield return new WaitForSecondsRealtime(0.2f);
+
+    if (mainCanvasRoot != null)
+    {
+        mainCanvasRoot.SetActive(false);
+        yield return new WaitForEndOfFrame();
+        mainCanvasRoot.SetActive(true);
+    }
+    else if (modeSelectionPanel != null && modeSelectionPanel.transform.parent != null)
+    {
+        GameObject root = modeSelectionPanel.transform.parent.gameObject;
+        root.SetActive(false);
+        yield return new WaitForEndOfFrame();
+        root.SetActive(true);
+    }
+
+}
+
+    public void SetActiveLetters(int count)
+    {
+        PlayerPrefs.SetInt("ActiveLetters", count);
+        PlayerPrefs.Save();
+
+    }
+
     public void StartGame() 
     { 
         OpenModeSelectionPanel(); 
@@ -63,20 +76,14 @@ public class MainMenuManager : MonoBehaviour
         if (modeSelectionPanel != null)
         {
             if (questPanel != null) questPanel.SetActive(false);
-            
             modeSelectionPanel.SetActive(true);
-
-            // Panel açıldığında Asset'lerin yenilenmeme ihtimaline karşı 
-            // küçük bir 'yenileme' tetiklemesi yapıyoruz.
             StartCoroutine(RefreshPanelLocalization());
         }
     }
 
     private IEnumerator RefreshPanelLocalization()
     {
-        // Panelin aktifleşmesi için 1 frame bekle
         yield return null;
-        // Localization sistemini mevcut dille tekrar "dürt"
         LocalizationSettings.SelectedLocale = LocalizationSettings.SelectedLocale;
     }
 
@@ -92,7 +99,6 @@ public class MainMenuManager : MonoBehaviour
             questPanel.SetActive(!questPanel.activeSelf); 
     }
 
-    // --- Sahne ve Uygulama Akışı ---
     public void BackToMenu() 
     { 
         SceneManager.LoadScene("MenuScene"); 
@@ -103,7 +109,6 @@ public class MainMenuManager : MonoBehaviour
         Application.Quit(); 
     }
     
-    // --- Oyun Modu Seçimleri ---
     public void StartWordGame() { SaveAndLoad(GameConstants.MODE_WORD); }
     public void StartCityGame() { SaveAndLoad(GameConstants.MODE_CITY); }
 

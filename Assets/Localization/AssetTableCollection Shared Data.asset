@@ -34,6 +34,7 @@ MonoBehaviour:
   m_Metadata:
     m_Items:
     - rid: 6489790814754963570
+    - rid: 6489791084394709066
   m_KeyGenerator:
     rid: 6489790814754963569
   references:
@@ -64,4 +65,13 @@ MonoBehaviour:
           - tr
           - en
         m_TypeString: UnityEngine.Texture2D, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+    - rid: 6489791084394709066
+      type: {class: AssetTypeMetadata, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_Entries:
+        - m_KeyId: 112275976192
+          m_TableCodes:
+          - tr
+        m_TypeString: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null

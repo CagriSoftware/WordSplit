@@ -15,14 +15,14 @@ MonoBehaviour:
   m_GroupName: Localization-Assets-Turkish (tr)
   m_GUID: 751c24adbd195bf4bb19b656f58a9f97
   m_SerializeEntries:
-  - m_GUID: 6e2a3c511f1709a4596242a64f419971
-    m_Address: 3 harf modu
+  - m_GUID: 51ac145c66fe3ea41a35288a30d7030d
+    m_Address: tr
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-tr
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7665c02679a74b34d86d58d358addf27
-    m_Address: "T\xFCrk\xE7e Kelime ve \u0130l il\xE7e"
+  - m_GUID: 6e2a3c511f1709a4596242a64f419971
+    m_Address: 3 harf modu
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-tr

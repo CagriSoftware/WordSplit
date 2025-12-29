@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization.Settings;
-using System.Globalization; // Kritik: Harf dönüşümleri için
+using System.Globalization;
 
 public class WordChecker : MonoBehaviour
 {
@@ -25,15 +25,19 @@ public class WordChecker : MonoBehaviour
 
     private IEnumerator Start()
     {
-        // Localization sisteminin hazır olmasını bekle
         yield return LocalizationSettings.InitializationOperation;
         RefreshWordList();
         UpdateScoreDisplay();
+        
+        // TEST İÇİN: Oyun başladığında eşik değerini konsola yazdır
+        Debug.Log("Aktif Görev Eşiği: " + GameConstants.QUEST_SCORE_THRESHOLD);
     }
 
     public void RefreshWordList()
     {
         validWords = new HashSet<string>();
+        if (LocalizationSettings.SelectedLocale == null) return;
+
         string dilKodu = LocalizationSettings.SelectedLocale.Identifier.Code;
         string dosyaAdi = dilKodu.Contains("tr") ? "TDK" : "English words";
         TextAsset wordFile = Resources.Load<TextAsset>(dosyaAdi);
@@ -59,9 +63,20 @@ public class WordChecker : MonoBehaviour
         if (string.IsNullOrEmpty(word)) return;
 
         bool isWordValid = false;
-        if(!WordContainLetters(word, letters)) { score -= 5; }
-        else if (!validWords.Contains(word)) { score -= 10; }
-        else { score += 10; isWordValid = true; }
+
+        if(!WordContainLetters(word, letters)) 
+        { 
+            score -= 5; 
+        }
+        else if (!validWords.Contains(word)) 
+        { 
+            score -= 10; 
+        }
+        else 
+        { 
+            score += 10; 
+            isWordValid = true; 
+        }
         
         UpdateScoreAndCheckQuests();
         StartCoroutine(AnimateAndStartNewTour(isWordValid));
@@ -76,33 +91,52 @@ public class WordChecker : MonoBehaviour
         return true;
     }
 
-    private void UpdateScoreDisplay() { scoreText.text = score.ToString(); }
+    private void UpdateScoreDisplay() 
+    { 
+        if (scoreText != null) scoreText.text = score.ToString(); 
+    }
     
     private void UpdateScoreAndCheckQuests()
     {
         UpdateScoreDisplay();
-        int highScore = PlayerPrefs.GetInt(GameConstants.HIGH_SCORE_KEY, 0);
-        if (score > highScore) PlayerPrefs.SetInt(GameConstants.HIGH_SCORE_KEY, score);
 
+        // 1. Yüksek Skor Kaydı
+        int highScore = PlayerPrefs.GetInt(GameConstants.HIGH_SCORE_KEY, 0);
+        if (score > highScore) 
+        {
+            PlayerPrefs.SetInt(GameConstants.HIGH_SCORE_KEY, score);
+        }
+
+        // 2. Görev Kontrolü (10 Puan Testi)
+        // Önemli: Skor eksiye düştüyse tetiklenmez, mutlaka pozitif 10 olmalı
         if (score >= GameConstants.QUEST_SCORE_THRESHOLD)
+        {
             PlayerPrefs.SetInt(GameConstants.QUEST_COMPLETED_KEY, 1);
+            PlayerPrefs.SetInt(GameConstants.MAX_LETTERS_KEY, GameConstants.QUEST_REWARD_LETTERS);
+            
+            // Log ekleyerek çalıştığını doğrula
+            Debug.Log("<color=green>GÖREV TAMAMLANDI: </color> Skor " + score + " ulaştı!");
+        }
+
         PlayerPrefs.Save();
     }
 
     private IEnumerator AnimateAndStartNewTour(bool isCorrect)
     {
-        letterPanelContainer.SetActive(false);
+        if (letterPanelContainer != null) letterPanelContainer.SetActive(false);
         playerInput.text = "";
-        feedbackAnimator.SetTrigger(isCorrect ? "Correct" : "Incorrect");
+        
+        if (feedbackAnimator != null) feedbackAnimator.SetTrigger(isCorrect ? "Correct" : "Incorrect");
+        
         yield return new WaitForSeconds(animationDuration);
         NewTour();
     }
 
     private void NewTour()
     {
-        letterPanelContainer.SetActive(true);
-        letterGenerator.GenerateRandomLetters();
-        timerController.StartNewTour();
+        if (letterPanelContainer != null) letterPanelContainer.SetActive(true);
+        if (letterGenerator != null) letterGenerator.GenerateRandomLetters();
+        if (timerController != null) timerController.StartNewTour();
         playerInput.ActivateInputField();
     }
 
